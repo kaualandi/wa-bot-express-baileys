@@ -58,16 +58,22 @@ const start = async (client: Client) => {
     if (number.endsWith("@g.us")) {
       chatId = number;
       console.log(`Número recebido é um grupo: ${number}`);
-      const group = await client.getGroupInfo(number);
-      console.log(`Informações do grupo: ${JSON.stringify(group)}`);
-      if (!group?.title) {
-        res.status(400).json({
-          worked: false,
-          detail: "O número informado é um grupo inválido!",
-          response: null,
-          message,
-          number,
-        });
+      try {
+
+        const group = await client.getGroupInfo(number);
+        console.log(`Informações do grupo: ${JSON.stringify(group)}`);
+        if (!group?.title) {
+          res.status(400).json({
+            worked: false,
+            detail: "O número informado é um grupo inválido!",
+            response: null,
+            message,
+            number,
+          });
+          return;
+        }
+      } catch (error) {
+        console.error(`Erro ao obter informações do grupo, tentando enviar mesmo assim: ${error}`);
         return;
       }
     } else {
