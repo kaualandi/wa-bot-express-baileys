@@ -74,7 +74,6 @@ const start = async (client: Client) => {
         }
       } catch (error) {
         console.error(`Erro ao obter informações do grupo, tentando enviar mesmo assim: ${error}`);
-        return;
       }
     } else {
       chatId = `${number}@c.us` as ContactId;
