@@ -95,16 +95,20 @@ const start = async (client: Client) => {
 
     let sended;
 
-    if (image) {
-      sended = await client.sendImage(chatId, image, "image", message);
-    } else {
-      sended = await client.sendText(chatId, message);
+    try {
+      if (image) {
+        sended = await client.sendImage(chatId, image, "image", message);
+      } else {
+        sended = await client.sendText(chatId, message);
+      }
+    } catch (error) {
+      console.error(`Erro ao enviar mensagem: ${error}`);
     }
 
     console.log(sended);
     
 
-    if (!sended.toString().startsWith("true")) {
+    if (!sended?.toString().startsWith("true")) {
       console.log(`Erro ao enviar mensagem para ${chatId}!`);
       res.status(400).json({
         worked: false,
