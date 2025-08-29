@@ -1,68 +1,83 @@
-import { STATE, create, Client, ContactId } from "@open-wa/wa-automate";
-import { Request, Response, Router } from "express";
+import { Request, Response } from "express";
+import express from "express";
+import axios from "axios";
 
-import options from "./config/options";
+import { PhoneValidator } from "./utils/phoneValidator";
+import { WhatsAppService } from "./services/whatsapp";
 
 
 require("dotenv").config();
 
-const express = require("express");
 const app = express();
 app.use(express.json());
 const port = process.env.PORT || 80;
 
-const start = async (client: Client) => {
-  console.log("\x1b[1;32m✓ USING:", process.env.USING, "\x1b[0m");
-  console.log("\x1b[1;32m✓ NUMBER:", await client.getHostNumber(), "\x1b[0m");
-  console.log("\x1b[1;32m[SERVER] Servidor iniciado!\x1b[0m");
+// Instância do serviço WhatsApp
+const whatsappService = new WhatsAppService();
 
-  client.onStateChanged((state: STATE) => {
-    console.log("[Status do cliente]", state);
-    if (state === "CONFLICT" || state === "UNLAUNCHED") client.forceRefocus();
-  });
-
-  client.onMessage(async (message) => {
-    console.log("[Mensagem recebida]", message.chatId, message.body);
-    if (message.body === "!ping") {
-      await client.sendText(message.chatId, "Pong!");
-    }
-  });
-
-  app.use(client.middleware(true));
+// Aguarda um tempo para a conexão ser estabelecida
+setTimeout(() => {
+  console.log(`\n• Listening on port ${port}!`);
+  
   app.listen(port, function () {
-    console.log(`\n• Listening on port ${port}!`);
+    console.log(`\n• Servidor iniciado na porta ${port}!`);
   });
+}, 5000);
 
-  app.get("/", (req: Request, res: Response) => {
-    res.status(200).json({
-      worked: true,
-      detail: "Servidor funcionando!",
+app.get("/", (req: Request, res: Response) => {
+  res.status(200).json({
+    worked: true,
+    detail: "Servidor funcionando!",
+    whatsappConnected: whatsappService.getConnectionStatus(),
+  });
+});
+
+app.get("/status", async (req: Request, res: Response) => {
+  const myNumber = await whatsappService.getMyNumber();
+  res.status(200).json({
+    worked: true,
+    detail: "Status do WhatsApp",
+    connected: whatsappService.getConnectionStatus(),
+    number: myNumber,
+  });
+});
+
+app.post("/send-text", async (req: Request, res: Response) => {
+  const { message, number, image } = req.body;
+  
+  if (!message || !number) {
+    res.status(400).json({
+      worked: false,
+      detail: "Parâmetros inválidos! Siga o exemplo abaixo",
+      example: {
+        message: "Olá, tudo bem?",
+        number: "5511999999999",
+      },
     });
-  });
+    return;
+  }
 
-  app.post("/send-text", async (req: Request, res: Response) => {
-    const { message, number, image } = req.body;
-    if (!message || !number) {
-      res.status(400).json({
-        worked: false,
-        detail: "Parâmetros inválidos! Siga o exemplo abaixo",
-        example: {
-          message: "Olá, tudo bem?",
-          number: "5511999999999",
-        },
-      });
-      return;
-    }
+  if (!whatsappService.getConnectionStatus()) {
+    res.status(503).json({
+      worked: false,
+      detail: "WhatsApp não está conectado!",
+      message,
+      number,
+    });
+    return;
+  }
 
-    let chatId = '' as ContactId;
-    if (number.endsWith("@g.us")) {
+  try {
+    let chatId: string;
+    
+    // Verifica se é um grupo
+    if (PhoneValidator.isGroupId(number)) {
       chatId = number;
       console.log(`Número recebido é um grupo: ${number}`);
+      
       try {
-
-        const group = await client.getGroupInfo(number);
-        console.log(`Informações do grupo: ${JSON.stringify(group)}`);
-        if (!group?.title) {
+        const group = await whatsappService.getGroupInfo(number);
+        if (!group?.name) {
           res.status(400).json({
             worked: false,
             detail: "O número informado é um grupo inválido!",
@@ -76,44 +91,62 @@ const start = async (client: Client) => {
         console.error(`Erro ao obter informações do grupo, tentando enviar mesmo assim: ${error}`);
       }
     } else {
-      chatId = `${number}@c.us` as ContactId;
-      const userHasWA = await client.checkNumberStatus(chatId);
-      if (userHasWA.status === 404) {
-        console.log(`Usuário ${chatId} não possui WhatsApp!`);
+      // Valida e formata o número
+      const phoneValidation = PhoneValidator.validateAndFormat(number);
+      if (!phoneValidation.isValid) {
         res.status(400).json({
           worked: false,
-          detail: "O número informado não possui WhatsApp!",
-          response: userHasWA,
+          detail: phoneValidation.error,
           message,
           number,
         });
         return;
       }
-      console.log('userHasWA', userHasWA);
+      
+      chatId = PhoneValidator.toChatId(phoneValidation.formatted!);
+      
+      // Verifica se o número tem WhatsApp
+      const numberCheck = await whatsappService.checkNumberExists(phoneValidation.formatted!);
+      if (!numberCheck.exists) {
+        console.log(`Usuário ${chatId} não possui WhatsApp!`);
+        res.status(400).json({
+          worked: false,
+          detail: "O número informado não possui WhatsApp!",
+          response: numberCheck,
+          message,
+          number,
+        });
+        return;
+      }
+      console.log('numberCheck', numberCheck);
     }
 
-
-    let sended;
+    let success = false;
 
     try {
       if (image) {
-        sended = await client.sendImage(chatId, image, "image", message);
+        // Se é uma URL de imagem, baixa primeiro
+        if (image.startsWith('http')) {
+          const response = await axios.get(image, { responseType: 'arraybuffer' });
+          const imageBuffer = Buffer.from(response.data);
+          success = await whatsappService.sendImageWithCaption(chatId, imageBuffer, message);
+        } else {
+          // Assume que é um buffer ou base64
+          const imageBuffer = Buffer.isBuffer(image) ? image : Buffer.from(image, 'base64');
+          success = await whatsappService.sendImageWithCaption(chatId, imageBuffer, message);
+        }
       } else {
-        sended = await client.sendText(chatId, message);
+        success = await whatsappService.sendMessage(chatId, message);
       }
     } catch (error) {
       console.error(`Erro ao enviar mensagem: ${error}`);
     }
 
-    console.log(sended);
-    
-
-    if (!sended?.toString().startsWith("true")) {
+    if (!success) {
       console.log(`Erro ao enviar mensagem para ${chatId}!`);
       res.status(400).json({
         worked: false,
         detail: "Erro ao enviar mensagem!",
-        response: sended,
         message,
         number,
       });
@@ -122,25 +155,44 @@ const start = async (client: Client) => {
       res.status(200).json({
         worked: true,
         detail: "Mensagem enviada com sucesso!",
-        response: sended,
         message,
         number,
       });
     }
-  });
+  } catch (error) {
+    console.error('Erro geral:', error);
+    res.status(500).json({
+      worked: false,
+      detail: "Erro interno do servidor",
+      error: error instanceof Error ? error.message : String(error),
+      message,
+      number,
+    });
+  }
+});
 
-  app.get("/groups", async (req: Request, res: Response) => {
-    const groups = await client.getAllGroups();
+app.get("/groups", async (req: Request, res: Response) => {
+  if (!whatsappService.getConnectionStatus()) {
+    res.status(503).json({
+      worked: false,
+      detail: "WhatsApp não está conectado!",
+    });
+    return;
+  }
+
+  try {
+    const groups = await whatsappService.getGroups();
     res.status(200).json({
       worked: true,
       detail: "Grupos obtidos com sucesso!",
       response: groups,
     });
-  });
-
-  return client;
-};
-
-create(options(true, start))
-  .then((client) => start(client))
-  .catch((error) => console.log(error));
+  } catch (error) {
+    console.error('Erro ao obter grupos:', error);
+    res.status(500).json({
+      worked: false,
+      detail: "Erro ao obter grupos",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+});

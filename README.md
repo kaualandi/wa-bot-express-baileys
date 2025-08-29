@@ -1,22 +1,27 @@
-<h1 align="center">Olá, bem vindo! 👋</h1>
-<p align="center">
-<img alt="Versão" src="https://img.shields.io/badge/version-1.0-blue.svg?cacheSeconds=2592000" />
-<img alt="Licença: APACHE 2.0" src="https://img.shields.io/badge/License-APACHE 2.0-yellow.svg" />
-<img alt="npm version" src="https://img.shields.io/npm/v/@open-wa/wa-automate.svg?color=green"/>
-<img alt="node-version" src="https://img.shields.io/node/v/@open-wa/wa-automate"/>
-<img alt="made-with-node" src="https://img.shields.io/badge/Made%20with-node-1f425f.svg"/>
+# WhatsApp Bot Express - Baileys Edition �
 
+<p align="center">
+<img alt="Versão" src="https://img.shields.io/badge/version-2.0-blue.svg?cacheSeconds=2592000" />
+<img alt="Licença: APACHE 2.0" src="https://img.shields.io/badge/License-APACHE 2.0-yellow.svg" />
+<img alt="Baileys" src="https://img.shields.io/badge/Baileys-WebSocket-green"/>
+<img alt="node-version" src="https://img.shields.io/badge/node-%3E%3D16-brightgreen"/>
+<img alt="made-with-typescript" src="https://img.shields.io/badge/Made%20with-TypeScript-blue.svg"/>
 </p>
 
-> Olá, esse bot de whatsapp foi criado para trabalhar em conjunto com Express.JS para enviar mensagens usando request.
+> Bot do WhatsApp construído com Express.js e Baileys (WebSocket) para envio de mensagens através de API REST.
 
-## Instalando bot
+## 🚀 **MIGRAÇÃO CONCLUÍDA: wa-automate → Baileys**
+
+### ✅ **O que mudou:**
+- **Biblioteca**: `@open-wa/wa-automate` → `@whiskeysockets/baileys`
+- **Conexão**: Puppeteer/Chrome → WebSocket nativo (mais estável e rápido)
+- **Autenticação**: Arquivo único → Multi-file auth state
+- **Performance**: Redução significativa no uso de recursos
+
+## 📦 Instalação
 
 ```bash
 git clone https://github.com/kaualandi/wa-bot-express.git
-```
-
-```bash
 cd wa-bot-express
 ```
 
@@ -24,37 +29,107 @@ cd wa-bot-express
 npm install
 ```
 
-## Variáveis de ambiente
+## 🔧 Configuração
 
-Você precisará de um arquivo `.env` parecido com esse:
+### Variáveis de ambiente (opcional)
+
+Crie um arquivo `.env`:
 
 ```env
-USING=DEVELOPMENT ENVIRONMENT VARIABLES
-PORT=3333
+PORT=3000
 ```
 
-Basta agora preencher os dados:
+- **PORT:** Define a porta do servidor (padrão: 80)
 
-- **USING:** É figurativo, apenas se mostrará qual variável está sendo usada, no caso de ter duas.
-- **PORT:** Define a porta que será servido seus endpoints. Se você não alterar usará 3333.
-
-## Endpoint
-
-- **POST /send-text:** Envia uma mensagem para o número informado.
-
-```json
-{
-  "number": "5511999999999",
-  "message": "Olá, tudo bem?"
-}
-```
-
-> Surgirão mais conforme a necessidade.
-
-## Execução do Bot
+## 🚀 Execução
 
 ```bash
 npm start
+```
+
+**Na primeira execução:**
+1. Um QR Code aparecerá no terminal
+2. Escaneie com seu WhatsApp
+3. A conexão será salva automaticamente em `auth_info/`
+
+## 📚 API Endpoints
+
+### GET `/` - Status do servidor
+```json
+{
+  "worked": true,
+  "detail": "Servidor funcionando!",
+  "whatsappConnected": true
+}
+```
+
+### GET `/status` - Status detalhado
+```json
+{
+  "worked": true,
+  "detail": "Status do WhatsApp",
+  "connected": true,
+  "number": "5511999999999"
+}
+```
+
+### POST `/send-text` - Enviar mensagem
+
+**Request:**
+```json
+{
+  "number": "5511999999999",
+  "message": "Olá, tudo bem?",
+  "image": "https://example.com/image.jpg"
+}
+```
+
+**Response:**
+```json
+{
+  "worked": true,
+  "detail": "Mensagem enviada com sucesso!",
+  "message": "Olá, tudo bem?",
+  "number": "5511999999999"
+}
+```
+
+### GET `/groups` - Listar grupos
+```json
+{
+  "worked": true,
+  "detail": "Grupos obtidos com sucesso!",
+  "response": [
+    {
+      "id": "123456789@g.us",
+      "name": "Meu Grupo",
+      "participants": 10
+    }
+  ]
+}
+```
+
+## ⚠️ Mudanças Importantes
+
+### Formato de números:
+- **Antes**: `5511999999999@c.us`
+- **Agora**: `5511999999999@s.whatsapp.net` (automático)
+
+### Autenticação:
+- **Antes**: Arquivo `.data.json`
+- **Agora**: Pasta `auth_info/` (multi-arquivo)
+
+### Performance:
+- ✅ Sem Chrome/Puppeteer
+- ✅ Conexão WebSocket nativa
+- ✅ Menor uso de recursos
+- ✅ Mais estável
+
+## 🔧 Scripts
+
+- `npm start` - Desenvolvimento com nodemon
+- `npm run build` - Compilar TypeScript
+- `npm run start:prod` - Produção
 ```
 
 Escaneie o QR Code como se estivesse conectando ao whatsapp web e dê _send_ na requisição.
