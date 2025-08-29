@@ -1,6 +1,7 @@
 import makeWASocket, { ConnectionState, DisconnectReason, useMultiFileAuthState, WASocket, proto, getContentType, downloadMediaMessage, MessageUpsertType, WAMessageContent, WAMessageKey } from '@whiskeysockets/baileys';
-import * as qrcode from 'qrcode-terminal';
+import * as qrcodeTerminal from 'qrcode-terminal';
 import { Boom } from '@hapi/boom';
+import * as QRCode from 'qrcode';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -10,6 +11,8 @@ import BaileysConfig from '../config/baileys';
 export class WhatsAppService {
   private socket: WASocket | null = null;
   private isConnected = false;
+  private currentQR: string | null = null;
+  private qrCodeImage: string | null = null;
 
   constructor() {
     this.initializeBot();
@@ -65,17 +68,39 @@ export class WhatsAppService {
     }
   }
 
-  private handleConnectionUpdate(update: Partial<ConnectionState>) {
+  private async handleConnectionUpdate(update: Partial<ConnectionState>) {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
-      console.log('\n🔗 Escaneie o QR Code abaixo com seu WhatsApp:');
-      qrcode.generate(qr, { small: true });
+      console.log('\n🔗 QR Code gerado para WhatsApp');
+      qrcodeTerminal.generate(qr, { small: true });
+      
+      // Armazena o QR code atual
+      this.currentQR = qr;
+      
+      // Gera imagem do QR code em base64
+      try {
+        this.qrCodeImage = await QRCode.toDataURL(qr, {
+          width: 256,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        });
+        console.log('✅ QR Code disponível via API: GET /qr');
+      } catch (error) {
+        console.error('Erro ao gerar QR Code como imagem:', error);
+      }
     }
 
     if (connection === 'close') {
       const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
       console.log('Conexão fechada devido a:', lastDisconnect?.error);
+      
+      // Limpa QR code quando desconecta
+      this.currentQR = null;
+      this.qrCodeImage = null;
       
       if (shouldReconnect) {
         console.log('Reconectando...');
@@ -86,6 +111,9 @@ export class WhatsAppService {
       this.isConnected = false;
     } else if (connection === 'open') {
       console.log('\x1b[1;32m✓ WhatsApp conectado com sucesso!\x1b[0m');
+      // Limpa QR code quando conecta
+      this.currentQR = null;
+      this.qrCodeImage = null;
       this.isConnected = true;
     }
   }
@@ -233,5 +261,17 @@ export class WhatsAppService {
       console.error('Erro ao obter número:', error);
       return null;
     }
+  }
+
+  public getCurrentQR(): string | null {
+    return this.currentQR;
+  }
+
+  public getQRCodeImage(): string | null {
+    return this.qrCodeImage;
+  }
+
+  public hasQRCode(): boolean {
+    return this.currentQR !== null;
   }
 }

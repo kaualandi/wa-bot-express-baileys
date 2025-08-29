@@ -39,7 +39,52 @@ app.get("/status", async (req: Request, res: Response) => {
     detail: "Status do WhatsApp",
     connected: whatsappService.getConnectionStatus(),
     number: myNumber,
+    hasQR: whatsappService.hasQRCode(),
   });
+});
+
+app.get("/qr", (req: Request, res: Response) => {
+  const qrImage = whatsappService.getQRCodeImage();
+  const qrText = whatsappService.getCurrentQR();
+  
+  if (!qrImage || !qrText) {
+    res.status(404).json({
+      worked: false,
+      detail: "QR Code não disponível",
+      reason: whatsappService.getConnectionStatus() 
+        ? "WhatsApp já está conectado" 
+        : "QR Code ainda não foi gerado. Aguarde alguns segundos e tente novamente."
+    });
+    return;
+  }
+
+  res.status(200).json({
+    worked: true,
+    detail: "QR Code do WhatsApp",
+    qrCode: qrText,
+    qrImage: qrImage,
+    instructions: "Escaneie este QR Code com seu WhatsApp para conectar"
+  });
+});
+
+app.get("/qr/image", (req: Request, res: Response) => {
+  const qrImage = whatsappService.getQRCodeImage();
+  
+  if (!qrImage) {
+    res.status(404).json({
+      worked: false,
+      detail: "QR Code não disponível"
+    });
+    return;
+  }
+
+  // Remove o prefixo data:image/png;base64, se existir
+  const base64Data = qrImage.replace(/^data:image\/png;base64,/, '');
+  const imageBuffer = Buffer.from(base64Data, 'base64');
+  
+  res.setHeader('Content-Type', 'image/png');
+  res.setHeader('Content-Length', imageBuffer.length);
+  res.send(imageBuffer);
 });
 
 app.post("/send-text", async (req: Request, res: Response) => {
