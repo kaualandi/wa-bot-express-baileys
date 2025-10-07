@@ -266,12 +266,12 @@ whatsappService.onAnyMessage((message: WAMessage) => {
     message.message.conversation = videoMessage.caption || '';
   }
   
-  // Send post request to /save-message endpoint
-  // axios.post(`http://localhost:${port}/save-message`, message)
-  //   .then(response => {
-  //     console.log('Mensagem enviada ao servidor!');
-  //   })
-  //   .catch(error => {
-  //     console.error('Erro ao salvar mensagem:', error);
-  //   });
+  // Send post request
+  axios.post(`https://milhascomia.noclaf.com.br/core/log-message/`, message)
+    .then(response => {
+      console.log('Mensagem enviada ao servidor!');
+    })
+    .catch(error => {
+      console.error('Erro ao salvar mensagem:', error?.response?.data?.error);
+    });
 });
