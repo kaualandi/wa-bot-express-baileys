@@ -25,6 +25,9 @@
             border: 2px dashed #ddd;
             border-radius: 10px;
         }
+        .qr-container h3 {
+            margin-top: 0;
+        }
         .qr-image {
             max-width: 256px;
             border-radius: 5px;
@@ -75,6 +78,10 @@
             margin: 20px 0;
             text-align: left;
         }
+        .connection-info {
+            margin-top: 20px;
+            text-align: left;
+        }
         .error {
             background-color: #f8d7da;
             border: 1px solid #f5c6cb;
@@ -94,12 +101,12 @@
             ⏳ Verificando status...
         </div>
         
-        <div id="qr-container" class="qr-container" style="display: none;">
+        <div id="qr-container" class="qr-container">
             <h3>📱 Escaneie o QR Code com seu WhatsApp</h3>
             <img id="qr-image" class="qr-image" alt="QR Code do WhatsApp" />
         </div>
         
-        <div class="instructions" id="instructions" style="display: none;">
+        <div class="instructions" id="instructions">
             <h4>📋 Instruções:</h4>
             <ol>
                 <li>Abra o <strong>WhatsApp</strong> no seu celular</li>
@@ -112,10 +119,10 @@
         
         <div>
             <button onclick="checkStatus()">🔄 Verificar Status</button>
-            <button onclick="getQRCode()">📱 Atualizar QR Code</button>
+            <button id="update-qr" onclick="getQRCode()">📱 Atualizar QR Code</button>
         </div>
         
-        <div id="connection-info" style="margin-top: 20px; text-align: left; display: none;">
+        <div id="connection-info">
             <h4>📊 Informações da Conexão:</h4>
             <p><strong>Número:</strong> <span id="phone-number">-</span></p>
             <p><strong>Status:</strong> <span id="connection-status">-</span></p>
@@ -123,7 +130,7 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:3000';
+        const API_BASE = '';
         
         async function checkStatus() {
             try {
@@ -134,6 +141,7 @@
                 const qrContainer = document.getElementById('qr-container');
                 const instructions = document.getElementById('instructions');
                 const connectionInfo = document.getElementById('connection-info');
+                const updateQRButton = document.getElementById('update-qr');
                 
                 if (data.connected) {
                     statusDiv.className = 'status connected';
@@ -141,6 +149,7 @@
                     qrContainer.style.display = 'none';
                     instructions.style.display = 'none';
                     connectionInfo.style.display = 'block';
+                    updateQRButton.style.display = 'none';
                     
                     document.getElementById('phone-number').textContent = data.number || 'Não identificado';
                     document.getElementById('connection-status').textContent = 'Conectado';

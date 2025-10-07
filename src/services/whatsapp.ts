@@ -1,9 +1,7 @@
-import makeWASocket, { ConnectionState, DisconnectReason, useMultiFileAuthState, WASocket, proto, getContentType, downloadMediaMessage, MessageUpsertType, WAMessageContent, WAMessageKey } from '@whiskeysockets/baileys';
+import makeWASocket, { ConnectionState, DisconnectReason, useMultiFileAuthState, WASocket, proto, getContentType, downloadMediaMessage, MessageUpsertType, WAMessageContent, WAMessageKey, WAMessage } from '@whiskeysockets/baileys';
 import * as qrcodeTerminal from 'qrcode-terminal';
 import { Boom } from '@hapi/boom';
 import * as QRCode from 'qrcode';
-import * as path from 'path';
-import * as fs from 'fs';
 
 import BaileysConfig from '../config/baileys';
 
@@ -13,7 +11,7 @@ export class WhatsAppService {
   private isConnected = false;
   private currentQR: string | null = null;
   private qrCodeImage: string | null = null;
-  public onAnyMessage: (message: WAMessageContent) => void = () => {};
+  private messageCallback: (message: WAMessage) => void = () => {};
 
   constructor() {
     this.initializeBot();
@@ -119,7 +117,7 @@ export class WhatsAppService {
     }
   }
 
-  private async handleMessage(messageUpdate: { messages: proto.IWebMessageInfo[], type: MessageUpsertType }) {
+  private async handleMessage(messageUpdate: { messages: WAMessage[], type: MessageUpsertType }) {
     const { messages, type } = messageUpdate;
 
     if (type !== 'notify') return;
@@ -149,7 +147,7 @@ export class WhatsAppService {
       }
 
       // Chama o callback para qualquer mensagem recebida
-      this.onAnyMessage(messageContent);
+      this.messageCallback(message);
     }
   }
 
@@ -277,5 +275,9 @@ export class WhatsAppService {
 
   public hasQRCode(): boolean {
     return this.currentQR !== null;
+  }
+
+  public onAnyMessage(callback: (message: WAMessage) => void): void {
+    this.messageCallback = callback;
   }
 }

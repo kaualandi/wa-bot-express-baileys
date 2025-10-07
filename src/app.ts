@@ -1,7 +1,8 @@
-import { WAMessageContent } from "@whiskeysockets/baileys";
+import { WAMessage } from "@whiskeysockets/baileys";
 import { Request, Response } from "express";
 import express from "express";
 import axios from "axios";
+import fs from "fs";
 
 import { PhoneValidator } from "./utils/phoneValidator";
 import { WhatsAppService } from "./services/whatsapp";
@@ -25,14 +26,19 @@ setTimeout(() => {
   });
 }, 5000);
 
+
 app.get("/", (req: Request, res: Response) => {
+  res.sendFile(__dirname + '/qr.html');
+});
+
+  app.get("/health", (req: Request, res: Response) => {
   res.status(200).json({
     worked: true,
     detail: "Servidor funcionando!",
     whatsappConnected: whatsappService.getConnectionStatus(),
   });
 });
-
+  
 app.get("/status", async (req: Request, res: Response) => {
   const myNumber = await whatsappService.getMyNumber();
   res.status(200).json({
@@ -243,6 +249,29 @@ app.get("/groups", async (req: Request, res: Response) => {
   }
 });
 
-whatsappService.onAnyMessage = ((message: WAMessageContent) => {
-  console.log('Mensagem recebida (callback global):', message);
+whatsappService.onAnyMessage((message: WAMessage) => {
+  if (message.key.remoteJid === 'status@broadcast') return; // Ignora mensagens de status
+  if (!message.message) return; // Ignora mensagens sem conteúdo
+  if (message.key.fromMe) return; // Ignora mensagens enviadas pelo próprio bot
+  if (message.message.reactionMessage) return; // Ignora reações
+
+  // Handle image and video messages to extract caption
+  const {imageMessage, videoMessage} = message.message;
+  
+  if (imageMessage) {
+    message.message.conversation = imageMessage.caption || '';
+  }
+
+  if (videoMessage) {
+    message.message.conversation = videoMessage.caption || '';
+  }
+  
+  // Send post request to /save-message endpoint
+  // axios.post(`http://localhost:${port}/save-message`, message)
+  //   .then(response => {
+  //     console.log('Mensagem enviada ao servidor!');
+  //   })
+  //   .catch(error => {
+  //     console.error('Erro ao salvar mensagem:', error);
+  //   });
 });
