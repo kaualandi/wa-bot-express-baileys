@@ -13,6 +13,7 @@ export class WhatsAppService {
   private isConnected = false;
   private currentQR: string | null = null;
   private qrCodeImage: string | null = null;
+  public onAnyMessage: (message: WAMessageContent) => void = () => {};
 
   constructor() {
     this.initializeBot();
@@ -146,6 +147,9 @@ export class WhatsAppService {
       if (textMessage.toLowerCase() === '!ping') {
         await this.sendMessage(chatId, 'Pong! 🏓');
       }
+
+      // Chama o callback para qualquer mensagem recebida
+      this.onAnyMessage(messageContent);
     }
   }
 

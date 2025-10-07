@@ -5,8 +5,8 @@
   "main": "app.js",
   "scripts": {
     "build": "rimraf ./build && tsc",
-    "start": "nodemon",
-    "start:prod": "npm run build && node build/app.ts"
+    "dev": "nodemon",
+    "start": "npm run build && node build/app.ts"
   },
   "keywords": [],
   "author": "Kauã Landi <kaualandi@hotmail.com>",

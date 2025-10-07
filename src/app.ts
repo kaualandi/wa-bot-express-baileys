@@ -1,3 +1,4 @@
+import { WAMessageContent } from "@whiskeysockets/baileys";
 import { Request, Response } from "express";
 import express from "express";
 import axios from "axios";
@@ -240,4 +241,8 @@ app.get("/groups", async (req: Request, res: Response) => {
       error: error instanceof Error ? error.message : String(error),
     });
   }
+});
+
+whatsappService.onAnyMessage = ((message: WAMessageContent) => {
+  console.log('Mensagem recebida (callback global):', message);
 });
