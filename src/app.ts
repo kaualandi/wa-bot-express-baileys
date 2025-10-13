@@ -273,7 +273,21 @@ whatsappService.onAnyMessage((message: WAMessage) => {
     })
     .catch(error => {
       console.error('Erro ao salvar mensagem:', error?.response?.data?.error);
-      
+
+      // Função para remover referências circulares
+      function safeStringify(obj: any) {
+        const seen = new WeakSet();
+        return JSON.stringify(obj, function(key, value) {
+          if (typeof value === "object" && value !== null) {
+            if (seen.has(value)) {
+              return undefined;
+            }
+            seen.add(value);
+          }
+          return value;
+        }, 2);
+      }
+
       // Salva o erro em arquivo JSON (evitando referências circulares)
       const errorLog = {
         timestamp: new Date().toISOString(),
@@ -287,9 +301,9 @@ whatsappService.onAnyMessage((message: WAMessage) => {
           code: error?.code
         }
       };
-      
+
       try {
-        fs.writeFileSync('./message-error.json', JSON.stringify(errorLog, null, 2));
+        fs.writeFileSync('./message-error.json', safeStringify(errorLog));
         console.log('Erro salvo em message-error.json');
       } catch (writeError) {
         console.error('Erro ao salvar arquivo de erro:', writeError);
