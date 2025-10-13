@@ -274,11 +274,18 @@ whatsappService.onAnyMessage((message: WAMessage) => {
     .catch(error => {
       console.error('Erro ao salvar mensagem:', error?.response?.data?.error);
       
-      // Salva o erro em arquivo JSON
+      // Salva o erro em arquivo JSON (evitando referências circulares)
       const errorLog = {
         timestamp: new Date().toISOString(),
         sentObject: message,
-        errorResponse: error?.response
+        errorResponse: {
+          status: error?.response?.status,
+          statusText: error?.response?.statusText,
+          data: error?.response?.data,
+          headers: error?.response?.headers,
+          message: error?.message,
+          code: error?.code
+        }
       };
       
       try {
