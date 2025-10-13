@@ -256,7 +256,7 @@ whatsappService.onAnyMessage((message: WAMessage) => {
   if (message.message.reactionMessage) return; // Ignora reações
 
   // Handle image and video messages to extract caption
-  const {imageMessage, videoMessage} = message.message;
+  const {imageMessage, videoMessage, extendedTextMessage} = message.message;
   
   if (imageMessage) {
     message.message.conversation = imageMessage.caption || '';
@@ -266,6 +266,10 @@ whatsappService.onAnyMessage((message: WAMessage) => {
     message.message.conversation = videoMessage.caption || '';
   }
   
+  if (extendedTextMessage && !message.message.conversation) {
+    message.message.conversation = extendedTextMessage.text || '';
+  }
+
   // Send post request
   axios.post(`https://milhascomia.noclaf.com.br/core/log-message/`, message)
     .then(response => {
