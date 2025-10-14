@@ -23,6 +23,7 @@ export class WhatsAppService {
 
       this.socket = makeWASocket({
         auth: state,
+        version: BaileysConfig.version,
         printQRInTerminal: BaileysConfig.printQRInTerminal,
         logger: {
           level: 'error',

@@ -1,5 +1,6 @@
 export const BaileysConfig = {
   browser: ['WhatsApp Bot Express', 'Chrome', '1.0.0'] as [string, string, string],
+  version: [2, 3000, 1028401180] as [number, number, number],
   printQRInTerminal: false, // Controlamos manualmente o QR
   generateHighQualityLinkPreview: true,
   markOnlineOnConnect: true,
