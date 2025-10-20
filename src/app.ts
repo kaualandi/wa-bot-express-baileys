@@ -96,6 +96,7 @@ app.get("/qr/image", (req: Request, res: Response) => {
 
 app.post("/send-text", async (req: Request, res: Response) => {
   const { message, number, image } = req.body;
+  const withPreview = req.query['with-preview'] === 'true';
   
   if (!message || !number) {
     res.status(400).json({
@@ -188,7 +189,7 @@ app.post("/send-text", async (req: Request, res: Response) => {
           success = await whatsappService.sendImageWithCaption(chatId, imageBuffer, message);
         }
       } else {
-        success = await whatsappService.sendMessage(chatId, message);
+        success = await whatsappService.sendMessage(chatId, message, withPreview);
       }
     } catch (error) {
       console.error(`Erro ao enviar mensagem: ${error}`);

@@ -162,14 +162,14 @@ export class WhatsAppService {
     }
   }
 
-  public async sendMessage(chatId: string, message: string): Promise<boolean> {
+  public async sendMessage(chatId: string, message: string, withPreview = false): Promise<boolean> {
     if (!this.socket || !this.isConnected) {
       throw new Error("WhatsApp não está conectado");
     }
 
     let linkPreview: WAUrlInfo | undefined;
     const urlFromText = LinkValidator.extractFirstLink(message);
-    if (urlFromText) {
+    if (urlFromText && withPreview) {
       linkPreview = await getUrlInfo(urlFromText, {
         thumbnailWidth: 1024,
         fetchOpts: {
