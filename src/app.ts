@@ -272,7 +272,6 @@ whatsappService.onAnyMessage((message: WAMessage) => {
   }
 
   // Send post request
-  return;
   axios.post(`https://milhascomia.noclaf.com.br/core/log-message/`, message)
     .then(response => {
       console.log('Mensagem enviada ao servidor!');
