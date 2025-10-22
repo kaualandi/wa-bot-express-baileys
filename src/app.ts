@@ -97,7 +97,12 @@ app.get("/qr/image", (req: Request, res: Response) => {
 app.post("/send-text", async (req: Request, res: Response) => {
   const { message, number, image } = req.body;
   const withPreview = req.query['with-preview'] === 'true';
-  
+  console.log("\n=========================================\n");
+  console.log(`Mensagem: ${message.substring(0, 20)}${message && message.length > 50 ? '...' : ''}`);
+  console.log(`Número: ${number}`);
+  console.log(`Imagem: ${image ? 'Sim' : 'Não'}`);
+  console.log(`Com Preview: ${withPreview ? 'Sim' : 'Não'}`);
+
   if (!message || !number) {
     res.status(400).json({
       worked: false,
@@ -255,6 +260,7 @@ whatsappService.onAnyMessage((message: WAMessage) => {
   if (!message.message) return; // Ignora mensagens sem conteúdo
   if (message.key.fromMe) return; // Ignora mensagens enviadas pelo próprio bot
   if (message.message.reactionMessage) return; // Ignora reações
+  console.log("\n=========================================\n");
 
   // Handle image and video messages to extract caption
   const {imageMessage, videoMessage, extendedTextMessage} = message.message;

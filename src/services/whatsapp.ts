@@ -170,6 +170,7 @@ export class WhatsAppService {
     let linkPreview: WAUrlInfo | undefined;
     const urlFromText = LinkValidator.extractFirstLink(message);
     if (urlFromText && withPreview) {
+      console.log(`Gerando link preview para: ${urlFromText}`);
       linkPreview = await getUrlInfo(urlFromText, {
         thumbnailWidth: 1024,
         fetchOpts: {
