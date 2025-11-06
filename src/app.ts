@@ -98,6 +98,7 @@ app.post("/send-text", async (req: Request, res: Response) => {
   const { message, number, image } = req.body;
   const withPreview = req.query['with-preview'] === 'true';
   console.log("\n=========================================\n");
+  console.log(`Carimbo:`, new Date().toISOString());
   console.log(`Mensagem: ${message.substring(0, 20)}${message && message.length > 50 ? '...' : ''}`);
   console.log(`Número: ${number}`);
   console.log(`Imagem: ${image ? 'Sim' : 'Não'}`);
@@ -261,7 +262,6 @@ whatsappService.onAnyMessage((message: WAMessage) => {
   if (message.key.fromMe) return; // Ignora mensagens enviadas pelo próprio bot
   if (message.message.reactionMessage) return; // Ignora reações
   console.log("\n=========================================\n");
-  console.log(new Date().toISOString());
   
 
   // Handle image and video messages to extract caption
