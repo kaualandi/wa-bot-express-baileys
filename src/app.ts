@@ -261,6 +261,8 @@ whatsappService.onAnyMessage((message: WAMessage) => {
   if (message.key.fromMe) return; // Ignora mensagens enviadas pelo próprio bot
   if (message.message.reactionMessage) return; // Ignora reações
   console.log("\n=========================================\n");
+  console.log(new Date().toISOString());
+  
 
   // Handle image and video messages to extract caption
   const {imageMessage, videoMessage, extendedTextMessage} = message.message;
