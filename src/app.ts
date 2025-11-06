@@ -99,7 +99,7 @@ app.post("/send-text", async (req: Request, res: Response) => {
   const withPreview = req.query['with-preview'] === 'true';
   console.log("\n=========================================\n");
   console.log(`Carimbo:`, new Date().toISOString());
-  console.log(`Mensagem: ${message.substring(0, 20)}${message && message.length > 50 ? '...' : ''}`);
+  console.log(`Mensagem: ${message.substring(0, 20)}${message && message.length > 20 ? '...' : ''}`);
   console.log(`Número: ${number}`);
   console.log(`Imagem: ${image ? 'Sim' : 'Não'}`);
   console.log(`Com Preview: ${withPreview ? 'Sim' : 'Não'}`);
