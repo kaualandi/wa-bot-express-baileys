@@ -170,13 +170,18 @@ export class WhatsAppService {
     const urlFromText = LinkValidator.extractFirstLink(message);
     if (urlFromText && withPreview) {
       console.log(`Gerando link preview para: ${urlFromText}`);
-      linkPreview = await getUrlInfo(urlFromText, {
-        thumbnailWidth: 1024,
-        fetchOpts: {
-          timeout: 5000,
-        },
-        uploadImage: this.socket.waUploadToServer,
-      });
+      try {
+        linkPreview = await getUrlInfo(urlFromText, {
+          thumbnailWidth: 1024,
+          fetchOpts: {
+            timeout: 5000,
+          },
+          uploadImage: this.socket.waUploadToServer,
+        });
+      } catch (error) { 
+        console.log('Não foi possível gerar o preview:', error);
+        
+      }
     }
 
     try {
