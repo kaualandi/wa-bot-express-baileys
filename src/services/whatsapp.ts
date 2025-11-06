@@ -53,7 +53,6 @@ export class WhatsAppService {
         defaultQueryTimeoutMs: BaileysConfig.defaultQueryTimeoutMs,
         retryRequestDelayMs: BaileysConfig.retryRequestDelayMs,
         maxMsgRetryCount: BaileysConfig.maxMsgRetryCount,
-        getMessage: BaileysConfig.getMessage,
       });
 
       this.socket.ev.on("connection.update", (update) => {
