@@ -61,8 +61,17 @@ export class WhatsAppService {
 
       this.socket.ev.on("creds.update", saveCreds);
 
-      this.socket.ev.on("messages.upsert", (messageUpdate) => {
-        this.handleMessage(messageUpdate);
+      this.socket.ev.on("messages.upsert", async (messageUpdate) => {
+        try {
+          await this.handleMessage(messageUpdate);
+        } catch (error: any) {
+          // Ignora erros de sessão silenciosamente - são comuns e não críticos
+          if (error?.message?.includes('No matching sessions found')) {
+            console.log('⚠️  Erro de sessão ignorado (mensagem antiga ou sessão expirada)');
+          } else {
+            console.error("Erro ao processar mensagem:", error);
+          }
+        }
       });
     } catch (error) {
       console.error("Erro ao inicializar bot:", error);
@@ -133,31 +142,40 @@ export class WhatsAppService {
     if (type !== "notify") return;
 
     for (const message of messages) {
-      if (!message.message) continue;
-      if (message.key.fromMe) continue; // Ignora mensagens enviadas pelo próprio bot
+      try {
+        if (!message.message) continue;
+        if (message.key.fromMe) continue; // Ignora mensagens enviadas pelo próprio bot
 
-      const messageContent = message.message;
-      const messageType = getContentType(messageContent);
-      const chatId = message.key.remoteJid!;
-      const senderId = message.key.participant || chatId;
+        const messageContent = message.message;
+        const messageType = getContentType(messageContent);
+        const chatId = message.key.remoteJid!;
+        const senderId = message.key.participant || chatId;
 
-      let textMessage = "";
+        let textMessage = "";
 
-      if (messageType === "conversation") {
-        textMessage = messageContent.conversation || "";
-      } else if (messageType === "extendedTextMessage") {
-        textMessage = messageContent.extendedTextMessage?.text || "";
+        if (messageType === "conversation") {
+          textMessage = messageContent.conversation || "";
+        } else if (messageType === "extendedTextMessage") {
+          textMessage = messageContent.extendedTextMessage?.text || "";
+        }
+
+        console.log(`[Mensagem recebida] ${chatId}: ${textMessage}`);
+
+        // Comando ping-pong simples
+        if (textMessage.toLowerCase() === "!ping") {
+          await this.sendMessage(chatId, "Pong! 🏓");
+        }
+
+        // Chama o callback para qualquer mensagem recebida
+        this.messageCallback(message);
+      } catch (error: any) {
+        // Trata erros por mensagem individualmente
+        if (error?.message?.includes('No matching sessions found')) {
+          console.log('⚠️  Mensagem com sessão inválida ignorada');
+        } else {
+          console.error("Erro ao processar mensagem individual:", error);
+        }
       }
-
-      console.log(`[Mensagem recebida] ${chatId}: ${textMessage}`);
-
-      // Comando ping-pong simples
-      if (textMessage.toLowerCase() === "!ping") {
-        await this.sendMessage(chatId, "Pong! 🏓");
-      }
-
-      // Chama o callback para qualquer mensagem recebida
-      this.messageCallback(message);
     }
   }
 
